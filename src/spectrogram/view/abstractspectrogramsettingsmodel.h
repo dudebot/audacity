@@ -27,9 +27,8 @@ class AbstractSpectrogramSettingsModel : public QObject
     Q_PROPERTY(QList<QString> colorSchemeNames READ colorSchemeNames CONSTANT)
 
     Q_PROPERTY(bool stereoCombined READ stereoCombined WRITE setStereoCombined NOTIFY stereoCombinedChanged)
-    Q_PROPERTY(double stereoBalanceGain READ stereoBalanceGain WRITE setStereoBalanceGain NOTIFY stereoBalanceGainChanged)
-    Q_PROPERTY(double stereoBalanceGainMin READ stereoBalanceGainMin CONSTANT)
-    Q_PROPERTY(double stereoBalanceGainMax READ stereoBalanceGainMax CONSTANT)
+    Q_PROPERTY(int stereoBalancePalette READ stereoBalancePalette WRITE setStereoBalancePalette NOTIFY stereoBalancePaletteChanged)
+    Q_PROPERTY(QList<QString> stereoBalancePaletteNames READ stereoBalancePaletteNames CONSTANT)
 
     Q_PROPERTY(int scale READ scale WRITE setScale NOTIFY scaleChanged)
     Q_PROPERTY(QList<QString> scaleNames READ scaleNames CONSTANT)
@@ -68,10 +67,9 @@ public:
     virtual bool stereoCombined() const = 0;
     virtual void setStereoCombined(bool value) = 0;
 
-    virtual double stereoBalanceGain() const = 0;
-    virtual void setStereoBalanceGain(double value) = 0;
-    double stereoBalanceGainMin() const { return 0.25; }
-    double stereoBalanceGainMax() const { return 12.0; }
+    virtual int stereoBalancePalette() const = 0;
+    virtual void setStereoBalancePalette(int value) = 0;
+    QList<QString> stereoBalancePaletteNames() const;
 
     virtual int scale() const = 0;
     virtual void setScale(int value) = 0;
@@ -97,7 +95,7 @@ signals:
     void colorHighBoostDbPerDecChanged();
     void colorSchemeChanged();
     void stereoCombinedChanged();
-    void stereoBalanceGainChanged();
+    void stereoBalancePaletteChanged();
     void scaleChanged();
     void algorithmChanged();
     void windowTypeChanged();

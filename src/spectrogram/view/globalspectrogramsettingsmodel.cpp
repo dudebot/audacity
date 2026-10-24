@@ -34,8 +34,8 @@ void GlobalSpectrogramSettingsModel::componentComplete()
     configuration()->stereoCombinedChanged().onReceive(this, [this](auto){
         emit stereoCombinedChanged();
     });
-    configuration()->stereoBalanceGainChanged().onReceive(this, [this](auto){
-        emit stereoBalanceGainChanged();
+    configuration()->stereoBalancePaletteChanged().onReceive(this, [this](auto){
+        emit stereoBalancePaletteChanged();
     });
     configuration()->scaleChanged().onReceive(this, [this](auto){
         emit scaleChanged();
@@ -139,14 +139,14 @@ void GlobalSpectrogramSettingsModel::setStereoCombined(bool value)
     configuration()->setStereoCombined(value);
 }
 
-double GlobalSpectrogramSettingsModel::stereoBalanceGain() const
+int GlobalSpectrogramSettingsModel::stereoBalancePalette() const
 {
-    return configuration()->stereoBalanceGain();
+    return static_cast<int>(configuration()->stereoBalancePalette());
 }
 
-void GlobalSpectrogramSettingsModel::setStereoBalanceGain(double value)
+void GlobalSpectrogramSettingsModel::setStereoBalancePalette(int value)
 {
-    configuration()->setStereoBalanceGain(value);
+    configuration()->setStereoBalancePalette(stereoBalancePaletteFromInt(value));
 }
 
 int GlobalSpectrogramSettingsModel::scale() const

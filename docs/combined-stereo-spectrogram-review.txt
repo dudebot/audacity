@@ -1,0 +1,130 @@
+Combined stereo spectrogram: feature and contributor review guide
+Review checkpoint: 2026-10-24
+
+Purpose
+Display the left and right spectral levels together in one spectrogram pane.
+Each channel contributes independently, so a quieter channel does not disappear
+merely because the other channel exceeds a fixed balance threshold.
+The feature reuses Audacity's existing FFT spectra and display gain/range settings.
+Changing a palette does not modify source audio or introduce another FFT analysis.
+
+What the colors mean
+Red / blue: left is red, right is blue, equal displayed levels blend to purple.
+Magenta / green: left is magenta, right is green, equal levels blend to gray/white.
+Orange / blue: left is orange, right is blue, equal levels blend to gray/white.
+Both channels at the display floor are black; equal levels brighten together.
+A dark pixel can mean below the chosen display floor, rather than literal silence.
+The mode is restricted to the Frequencies algorithm; mono uses ordinary rendering.
+The controls provide a palette choice and a fixed mapping, without a balance-contrast knob.
+
+Signal interpretation and information loss
+These are paired spectral levels, not phase, polarity, correlation, or stereo width.
+Equal powers can occur with signals having different or opposite phases.
+Equal overall channel loudness does not imply equal levels at every frequency.
+Each displayed frequency row may span several FFT bins. The representative bin is
+chosen by the largest single-channel level: max(leftDb, rightDb), first bin on ties.
+Both channel values are then read at that SAME bin to avoid pairing unrelated peaks.
+For example, left-only and right-only peaks in different bins can fall in one row.
+The stronger peak wins; the other peak can be discarded at that display resolution.
+This is peak-feature rendering, not a sum of all the power within the frequency row.
+Display clipping, row pooling, RGB8 quantization, and lookup interpolation lose data.
+The continuous design should not be described as lossless displayed pixels.
+
+Mapping to display color
+1. Normalize each cached dB value using the same gain and range:
+   u = clamp((db + range + gain) / range, 0, 1).
+2. Apply the same fixed curve f(u) = u / (3 - 2u) to each channel.
+   It maps 0 to 0, 0.5 to 0.25, and 1 to 1; it reserves bright mixtures for strong pairs.
+   This is a chosen display curve, not a physical amplitude decoder or unique best scale.
+3. Form base encoded RGB: (L,0,R), (L,R,L), or (L,0.4L+0.6R,R), respectively.
+4. Decode sRGB, then expand color differences about a same-luminance neutral.
+   Gray is the neutral for magenta/green and orange/blue; red/blue uses purple in G=0.
+   Expansion uses 5/(1+4r), with r the fraction of available gamut radius.
+5. Encode sRGB and dim selected colors by 0.72 without reversing channel identities.
+6. Use a precomputed 256-by-256 table for each palette and selection state.
+   Bilinear interpolation avoids snapping channel levels to the nearest table cell.
+The floating-point gamut expansion preserves luminance relative to the POST-CURVE
+base color. The curve changes brightness; selection, quantization, and interpolation
+mean final RGB8 pixels do not have exactly preserved luminance.
+The table is heap-backed and initialized once; cold initialization is separate from warm painting.
+
+Color vision and displays
+No palette here is certified safe for every color-vision deficiency or display.
+Alternative palettes help users choose, but do not replace labels and ordinary views.
+Monitor primaries have spectral distributions; RGB values are not isolated cone channels.
+Purple is a mixture, not a single wavelength. Display color does not encode an optical
+frequency corresponding to the audio frequency on the spectrogram's vertical axis.
+Color-vision simulations are screening tools, not proof of an individual's perception.
+Review the final transform with affected users, including small/dim features and selection.
+
+Human code walkthrough (paths are relative to the repository root)
+src/spectrogram/spectrogramtypes.h and configuration interfaces:
+  Explain palette IDs, invalid-ID fallback, defaults, inheritance, and local override.
+src/spectrogram/internal/au3/au3spectrogramsettings.cpp and au3trackspectrogramconfiguration.cpp:
+  Follow XML read/write, absent fields in old projects, and FFT window invalidation.
+src/spectrogram/internal/globalspectrogramconfiguration.cpp and snapshotspectrogramconfiguration.h:
+  Follow default persistence, notifications, and complete Cancel rollback.
+src/spectrogram/view/abstractspectrogramsettingsmodel.cpp and track/global models:
+  Trace the checkbox and palette setters, algorithm compatibility, and notification flow.
+src/spectrogram/view/trackspectrogramdisplaymodel.cpp:
+  Explain effective combined state and how configuration changes update the pane layout.
+src/trackedit/internal/trackspectrogramsettingsupdater.cpp:
+  Follow inherited global settings through track updates and display notifications.
+src/spectrogram/qml/Audacity/Spectrogram/ and the Preferences spectrogram color section:
+  Check channel labels, discoverability, mono behavior, and keyboard access.
+src/projectscene/qml/Audacity/ProjectScene/tracksitemsview/TrackClipsContainer.qml:
+  Check waveform, spectrogram, multiview, rulers, splitter visibility, and hit testing.
+src/spectrogram/internal/spectrogramcolors.cpp/.h:
+  Work through floor, ceiling, equal midpoint, and unequal examples for all three palettes.
+  Explain each display operation above and why it does not transform the source audio.
+src/spectrogram/internal/au3/au3spectrogramclipchannelpainter.cpp:
+  Walk through a two-bin competing-peak example and deterministic ties.
+  Review bin bounds, repeated-row reuse, RGB888 scanLine padding, and format fallback.
+src/spectrogram/tests/stereopalette_tests.cpp and tests/CMakeLists.txt:
+  Read the ten native tests and identify the integration behaviors they do not exercise.
+
+Validation recorded at this checkpoint
+The native application built successfully on Windows with MSVC and Qt 6.11.2.
+The newly built executable's --long-version command exited 0.
+The native spectrogram_tests executable passed all 10 maintained color tests.
+These cover channel endpoints/equality, the midpoint curve, intensity progression,
+quieter-channel visibility, floor clipping, selection, invalid inputs, extreme finite
+values, invalid palette fallback, and a shared display-gain scale.
+The final GUI/persistence matrix below has NOT been completed for this checkpoint.
+The running installed application was not replaced; the latest audit fixes were built
+but were not installed or exercised through the final application UI in this validation.
+Source fixes cover inherited-global notifications, compatible algorithm layout, and
+waveform divider visibility; source review alone does not establish runtime behavior.
+
+Reproducing native tests
+Follow BUILDING.md for the normal toolchain, Qt, dependency, and build configuration.
+Enable MUSE_ENABLE_UNIT_TESTS=ON and AU_BUILD_SPECTROGRAM_TESTS=ON in that configuration.
+cmake --build <build-dir> --target spectrogram_tests
+ctest --test-dir <build-dir> -R "^spectrogram_tests$" --output-on-failure
+Use an appropriate Qt runtime/plugin search path. A headless test environment may use
+QT_QPA_PLATFORM=offscreen; this does not substitute for GUI interaction tests.
+
+Outstanding before upstream review
+Test inherited-global enable/disable on existing tracks, overrides, and algorithm changes.
+Test save/reopen for all palettes, old projects without attributes, invalid IDs, and Cancel.
+Protect FFT/window reuse for palette changes and invalidation for algorithm/window/padding changes.
+Add integration coverage for shared-bin pooling, ties, first/last bins, repeated rows,
+selection boundaries, and odd RGB888 row strides.
+Exercise mono, waveform/multiview dividers, collapsed tracks, resizing, fractional scaling,
+keyboard navigation, selection, and hit testing. Run supported-platform CI.
+Measure cold initialization and warm UI latency separately on representative projects.
+Review naming, UX, interpretation, and accessibility with maintainers and users.
+
+Contribution process and accountability
+Read AI_POLICY.md and CONTRIBUTING.md at the repository root before requesting review.
+AI_POLICY.md requires contributors personally to read, review, and understand generated
+code and text, including comments, and remain able to answer questions about the work.
+An automated review does not meet that personal responsibility for the contributor.
+Write the PR description yourself; the policy strongly recommends this approach.
+Substantial AI assistance requires the PR template's AI field, tool name, and relevant
+commit trailers: Assisted-by: <tool name> <version, if known>.
+Use Assisted-by:, not AI Co-authored-by:. Sign the Audacity CLA as required by CONTRIBUTING.md.
+Review the current .github/pull_request_template.md for its remaining requirements.
+Discuss this feature before upstream submission; the template offers an issue-link field,
+but that alone is not a blanket requirement to create an issue for every contribution.
+The contributor remains responsible for licensing, correctness, validation, and public text.

@@ -19,7 +19,7 @@ public:
         m_colorHighBoostDbPerDec{config.colorHighBoostDbPerDec()},
         m_colorScheme{config.colorScheme()},
         m_stereoCombined{config.stereoCombined()},
-        m_stereoBalanceGain{config.stereoBalanceGain()},
+        m_stereoBalancePalette{config.stereoBalancePalette()},
         m_scale{config.scale()},
         m_algorithm{config.algorithm()},
         m_windowType{config.windowType()},
@@ -52,8 +52,8 @@ public:
     bool stereoCombined() override { return m_stereoCombined; }
     void setStereoCombined(bool) override { assert(false); }
 
-    double stereoBalanceGain() override { return m_stereoBalanceGain; }
-    void setStereoBalanceGain(double) override { assert(false); }
+    StereoBalancePalette stereoBalancePalette() override { return m_stereoBalancePalette; }
+    void setStereoBalancePalette(StereoBalancePalette) override { assert(false); }
 
     SpectrogramScale scale() override { return m_scale; }
     void setScale(SpectrogramScale) override { assert(false); }
@@ -81,7 +81,7 @@ private:
     const int m_colorHighBoostDbPerDec;
     const SpectrogramColorScheme m_colorScheme;
     const bool m_stereoCombined;
-    const double m_stereoBalanceGain;
+    const StereoBalancePalette m_stereoBalancePalette;
     const SpectrogramScale m_scale;
     const SpectrogramAlgorithm m_algorithm;
     const SpectrogramWindowType m_windowType;

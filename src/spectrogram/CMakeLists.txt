@@ -130,3 +130,7 @@ set(MODULE_LINK
 set(MODULE_LINK_PUBLIC shared)
 
 setup_module()
+
+if (AU_BUILD_SPECTROGRAM_TESTS)
+    add_subdirectory(tests)
+endif()

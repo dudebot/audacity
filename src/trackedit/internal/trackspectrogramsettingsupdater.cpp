@@ -26,6 +26,7 @@ void TrackSpectrogramSettingsUpdater::maybeApplyGlobalSettingsToTrack()
         if (config.useGlobalSettings()) {
             spectrogramService()->copyConfiguration(*globalSpectrogramConfiguration(), config);
             trackeditProject.notifyAboutTrackChanged(track);
+            spectrogramService()->notifyAboutTrackSpectrogramConfigurationChanged(track.id);
         }
     });
 }

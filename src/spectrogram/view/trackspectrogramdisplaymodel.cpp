@@ -31,6 +31,7 @@ void TrackSpectrogramDisplayModel::setTrackId(int value)
 bool TrackSpectrogramDisplayModel::stereoCombined() const
 {
     const auto config = spectrogramService()->trackSpectrogramConfiguration(m_trackId);
-    return config && config->stereoCombined();
+    return config && config->stereoCombined()
+           && config->algorithm() == SpectrogramAlgorithm::Frequencies;
 }
 } // namespace au::spectrogram

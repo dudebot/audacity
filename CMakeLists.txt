@@ -84,6 +84,7 @@ option(AU_BUILD_PROJECTSCENE_TESTS "Build projectscene tests" ${MUSE_ENABLE_UNIT
 option(AU_BUILD_RECORD_MODULE "Build record module" ON)
 option(AU_BUILD_RECORD_TESTS "Build record tests" ${MUSE_ENABLE_UNIT_TESTS})
 option(AU_BUILD_SHARED_TESTS "Build shared tests" ${MUSE_ENABLE_UNIT_TESTS})
+option(AU_BUILD_SPECTROGRAM_TESTS "Build spectrogram tests" ${MUSE_ENABLE_UNIT_TESTS})
 option(AU_BUILD_TRACKEDIT_TESTS "Build trackedit tests" ${MUSE_ENABLE_UNIT_TESTS})
 option(AU_BUILD_UICOMPONENTS_TESTS "Build uicomponents tests" ${MUSE_ENABLE_UNIT_TESTS})
 option(AU_BUILD_USAGEINFO_MODULE "Build usage info module" ON)

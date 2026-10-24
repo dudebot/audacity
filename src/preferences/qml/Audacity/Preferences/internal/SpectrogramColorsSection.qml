@@ -54,6 +54,7 @@ SpectrogramBaseSection {
 
         ComboBoxWithTitle {
             width: parent.width
+            visible: !settingsModel.stereoCombined
 
             navigation.panel: root.navigation
             navigation.order: repeater.count
@@ -72,41 +73,36 @@ SpectrogramBaseSection {
 
         CheckBox {
             id: combinedStereoCheckBox
-            text: qsTrc("spectrogram/settings", "Combine stereo channels by balance")
+            text: qsTrc("spectrogram/settings", "Combine stereo channels")
             checked: settingsModel.stereoCombined
 
             navigation.panel: root.navigation
             navigation.order: repeater.count + 1
             navigation.name: "ColorsCombinedStereoCheckBox"
 
-            onClicked: settingsModel.stereoCombined = checked
+            onClicked: settingsModel.stereoCombined = !checked
         }
 
-        IncrementalPropertyControlWithTitle {
+        ComboBoxWithTitle {
             width: parent.width
             visible: combinedStereoCheckBox.checked
-
             navigation.panel: root.navigation
             navigation.order: repeater.count + 2
-            navigation.name: "ColorsStereoBalanceGainControl"
-
+            navigation.name: "ColorsStereoPaletteComboBox"
             spacing: root.narrowSpacing
-            controlWidth: root.mediumControlWidth
-            title: qsTrc("spectrogram/settings", "Balance contrast")
-            minValue: 0.25
-            maxValue: 12
-            decimals: 2
-            step: 0.25
-            currentValue: settingsModel.stereoBalanceGain
-            onValueEditingFinished: function (value) {
-                settingsModel.stereoBalanceGain = value
+            columnWidth: root.mediumControlWidth
+            title: qsTrc("spectrogram/settings", "Stereo colors")
+            model: settingsModel.stereoBalancePaletteNames
+            currentIndex: settingsModel.stereoBalancePalette
+            onValueEdited: function (index) {
+                settingsModel.stereoBalancePalette = index
             }
         }
 
         StyledTextLabel {
             width: parent.width
             visible: combinedStereoCheckBox.checked
-            text: qsTrc("spectrogram/settings", "Brightness shows mean power. Red: left, purple: equal, blue: right.")
+            text: settingsModel.stereoBalancePalette === 0 ? qsTrc("spectrogram/settings", "Left: red. Right: blue. Equal levels blend to purple.") : settingsModel.stereoBalancePalette === 1 ? qsTrc("spectrogram/settings", "Left: magenta. Right: green. Equal levels blend to gray or white.") : qsTrc("spectrogram/settings", "Left: orange. Right: blue. Equal levels blend to gray or white.")
             wrapMode: Text.WordWrap
             color: ui.theme.fontSecondaryColor
         }

@@ -64,6 +64,7 @@ TrackSpectrogramBaseSection {
 
         Row {
             spacing: 0
+            visible: !settingsModel.stereoCombined
 
             StyledTextLabel {
                 width: root.mediumControlWidth
@@ -93,14 +94,14 @@ TrackSpectrogramBaseSection {
         CheckBox {
             id: combinedStereoCheckBox
 
-            text: qsTrc("spectrogram/settings", "Combine stereo channels by balance")
+            text: qsTrc("spectrogram/settings", "Combine stereo channels")
             checked: settingsModel.stereoCombined
 
             navigation.panel: root.navigation
             navigation.name: "ColorsCombinedStereoCheckBox"
             navigation.order: repeater.count + 1
 
-            onClicked: settingsModel.stereoCombined = checked
+            onClicked: settingsModel.stereoCombined = !checked
         }
 
         Row {
@@ -110,27 +111,19 @@ TrackSpectrogramBaseSection {
             StyledTextLabel {
                 width: root.mediumControlWidth
                 anchors.verticalCenter: parent.verticalCenter
-
-                text: qsTrc("spectrogram/settings", "Balance contrast")
-                elide: Text.ElideNone
-                wrapMode: Text.NoWrap
+                text: qsTrc("spectrogram/settings", "Stereo colors")
                 horizontalAlignment: Text.AlignLeft
             }
 
-            IncrementalPropertyControl {
-                width: root.mediumControlWidth
-
+            StyledDropdown {
+                width: root.largeControlWidth
                 navigation.panel: root.navigation
-                navigation.name: "ColorsStereoBalanceGainControl"
+                navigation.name: "ColorsStereoPaletteComboBox"
                 navigation.order: repeater.count + 2
-
-                minValue: 0.25
-                maxValue: 12
-                decimals: 2
-                step: 0.25
-                currentValue: settingsModel.stereoBalanceGain
-                onValueEditingFinished: function (newValue) {
-                    settingsModel.stereoBalanceGain = newValue
+                model: settingsModel.stereoBalancePaletteNames
+                currentIndex: settingsModel.stereoBalancePalette
+                onActivated: function (index, value) {
+                    settingsModel.stereoBalancePalette = index
                 }
             }
         }
@@ -138,7 +131,7 @@ TrackSpectrogramBaseSection {
         StyledTextLabel {
             width: parent.width
             visible: combinedStereoCheckBox.checked
-            text: qsTrc("spectrogram/settings", "Brightness shows mean power. Red: left, purple: equal, blue: right.")
+            text: settingsModel.stereoBalancePalette === 0 ? qsTrc("spectrogram/settings", "Left: red. Right: blue. Equal levels blend to purple.") : settingsModel.stereoBalancePalette === 1 ? qsTrc("spectrogram/settings", "Left: magenta. Right: green. Equal levels blend to gray or white.") : qsTrc("spectrogram/settings", "Left: orange. Right: blue. Equal levels blend to gray or white.")
             wrapMode: Text.WordWrap
             color: ui.theme.fontSecondaryColor
         }

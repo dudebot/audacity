@@ -64,18 +64,21 @@ float findValue(const float* spectrum, float bin0, float bin1, unsigned nBins, b
     return value;
 }
 
-// Unlike findValue(), leave the pooled FFT value in dB.  Combined stereo must
-// combine powers before display-range clipping, otherwise channel balance is
-// corrupted whenever either channel reaches the display floor or ceiling.
-float findRawDbValue(const float* spectrum, float bin0, float bin1, unsigned nBins)
+// Choose one representative frequency for both channels. Taking separate maxima
+// can pair unrelated peaks and falsely show equal-channel energy. Retain native
+// peak pooling: the strongest single-channel bin wins, with first-bin ties.
+int strongestStereoBin(const float* left, const float* right, int begin, int end)
 {
-    int index = std::min<int>(nBins - 1, static_cast<int>(floor(.5f + bin0)));
-    const int limitIndex = std::min<int>(nBins, static_cast<int>(floor(.5f + bin1)));
-    float value = spectrum[index];
-    while (++index < limitIndex) {
-        value = std::max(value, spectrum[index]);
+    int result = begin;
+    float strongest = std::max(left[begin], right[begin]);
+    for (int index = begin + 1; index < end; ++index) {
+        const float candidate = std::max(left[index], right[index]);
+        if (candidate > strongest) {
+            strongest = candidate;
+            result = index;
+        }
     }
-    return value;
+    return result;
 }
 
 inline SpectrogramColors::ColorGradientChoice ChooseColorSet(float bin0, float bin1, float selBinLo, float selBinHi)
@@ -251,6 +254,9 @@ void Au3SpectrogramClipChannelPainter::fillStereoCombinedImage(
         return;
     }
 
+    if (image.isNull()) {
+        return;
+    }
     auto& settings = tc.settings;
     const QRect paintableRect{ 0, 0, viewportWidth(viewInfo), image.height() };
     const ClipTimes clipTimes{ left.GetPlayStartTime(), left.GetPlayEndTime(), left.GetStretchRatio() };
@@ -271,6 +277,10 @@ void Au3SpectrogramClipChannelPainter::fillStereoCombinedImage(
     spectrumCache.GetSpectrogram(right, rightSpectrum, settings, ignoredWhere, imageWidth,
                                  visibleStartTime, viewInfo.pixelsPerSecond);
     const auto nBins = settings.NBins();
+    if (!leftSpectrum || !rightSpectrum || nBins == 0) {
+        image.fill(Qt::black);
+        return;
+    }
     const double binUnit = sampleRate / static_cast<double>(settings.GetFFTLength());
     const NumberScale numberScale(settings.scaleType, tc.minFreq, tc.maxFreq);
     std::vector<float> bins(imageHeight + 1);
@@ -288,20 +298,56 @@ void Au3SpectrogramClipChannelPainter::fillStereoCombinedImage(
     const float selBinLo = settings.findBin(selectionInfo.startFrequency, binUnit);
     const float selBinHi = settings.findBin(selectionInfo.endFrequency, binUnit);
     const int selectedX = static_cast<int>(timeToPosition(viewInfo, selectionInfo.startTime) - leftOffset);
+
+    struct Row {
+        int begin;
+        int end;
+        bool frequencySelected;
+        uchar* pixels;
+    };
+    // The current caller supplies RGB888. Retain a format-safe fallback for
+    // future callers; scanLine() also respects QImage's row padding.
+    const bool directRgb = image.format() == QImage::Format_RGB888;
+    std::vector<Row> rows;
+    rows.reserve(imageHeight);
+    for (int yy = 0; yy < imageHeight; ++yy) {
+        const int begin = std::clamp(static_cast<int>(std::floor(.5f + bins[yy])), 0, static_cast<int>(nBins - 1));
+        const int end = std::clamp(static_cast<int>(std::floor(.5f + bins[yy + 1])), begin + 1, static_cast<int>(nBins));
+        const bool frequencySelected = (selBinLo < 0 || selBinLo < bins[yy + 1])
+                                       && (selBinHi < 0 || selBinHi > bins[yy]);
+        rows.push_back({ begin, end, frequencySelected,
+                         directRgb ? image.scanLine(imageHeight - yy - 1) : nullptr });
+    }
     for (int xx = 0; xx < imageWidth; ++xx) {
         const auto w0 = sampleCount(.5 + sampleRate / stretchRatio
             * (positionToTime(viewInfo, xx + leftOffset) - playStartTime));
         const auto w1 = sampleCount(.5 + sampleRate / stretchRatio
             * (positionToTime(viewInfo, xx + 1 + leftOffset) - playStartTime));
         const bool timeSelected = selectionInfo.clipSelected || (ssel0 <= w0 && w1 < ssel1) || xx == selectedX;
+        const auto* leftColumn = leftSpectrum + nBins * xx;
+        const auto* rightColumn = rightSpectrum + nBins * xx;
+        int previousBegin = -1;
+        int previousEnd = -1;
+        int representativeBin = 0;
         for (int yy = 0; yy < imageHeight; ++yy) {
-            const float leftDb = findRawDbValue(leftSpectrum + nBins * xx, bins[yy], bins[yy + 1], nBins);
-            const float rightDb = findRawDbValue(rightSpectrum + nBins * xx, bins[yy], bins[yy + 1], nBins);
-            const bool frequencySelected = (selBinLo < 0 || selBinLo < bins[yy + 1])
-                                           && (selBinHi < 0 || selBinHi > bins[yy]);
-            const auto color = stereoBalanceColor(leftDb, rightDb, settings.gain, settings.range,
-                                                  settings.stereoBalanceGain, timeSelected && frequencySelected);
-            image.setPixelColor(xx, imageHeight - yy - 1, QColor(color.red, color.green, color.blue));
+            const auto& row = rows[yy];
+            // Zoomed-in rows often refer to the same FFT bin. Pool it once.
+            if (row.begin != previousBegin || row.end != previousEnd) {
+                representativeBin = strongestStereoBin(leftColumn, rightColumn, row.begin, row.end);
+                previousBegin = row.begin;
+                previousEnd = row.end;
+            }
+            const auto color = stereoBalanceColor(leftColumn[representativeBin], rightColumn[representativeBin],
+                                                  settings.gain, settings.range, settings.stereoBalancePalette,
+                                                  timeSelected && row.frequencySelected);
+            if (directRgb) {
+                auto* pixel = row.pixels + 3 * xx;
+                pixel[0] = color.red;
+                pixel[1] = color.green;
+                pixel[2] = color.blue;
+            } else {
+                image.setPixelColor(xx, imageHeight - yy - 1, QColor(color.red, color.green, color.blue));
+            }
         }
     }
 }

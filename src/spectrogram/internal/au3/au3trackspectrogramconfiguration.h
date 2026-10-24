@@ -46,8 +46,8 @@ public:
     bool stereoCombined() override;
     void setStereoCombined(bool value) override;
 
-    double stereoBalanceGain() override;
-    void setStereoBalanceGain(double value) override;
+    StereoBalancePalette stereoBalancePalette() override;
+    void setStereoBalancePalette(StereoBalancePalette value) override;
 
     SpectrogramScale scale() override;
     void setScale(SpectrogramScale value) override;

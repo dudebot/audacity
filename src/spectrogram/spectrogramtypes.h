@@ -34,6 +34,19 @@ enum class SpectrogramAlgorithm {
     _count
 };
 
+enum class StereoBalancePalette {
+    RedBlue = 0,
+    GreenMagenta,
+    OrangeBlue,
+    _count
+};
+
+inline StereoBalancePalette stereoBalancePaletteFromInt(int value)
+{
+    return value >= 0 && value < static_cast<int>(StereoBalancePalette::_count)
+           ? static_cast<StereoBalancePalette>(value) : StereoBalancePalette::RedBlue;
+}
+
 enum class SpectrogramWindowType {
     Rectangular = 0,
     Bartlett,

@@ -78,7 +78,7 @@ Item {
                 clipId: root.clipId
                 trackId: root.trackId
                 channel: index
-                stereoCombined: root.stereoCombined && root.isStereo
+                combinedStereo: root.stereoCombined && root.isStereo
                 timelineIndentWidth: root.timelineIndentWidth
                 zoom: root.zoom
                 frameStartTime: root.frameStartTime

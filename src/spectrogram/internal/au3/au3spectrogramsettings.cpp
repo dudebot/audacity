@@ -16,7 +16,6 @@
 
 #include "tft/WaveletCalculator.h"
 
-#include <algorithm>
 #include <cmath>
 #include <memory>
 
@@ -42,9 +41,9 @@ static const AttachedTrackObjects::RegisteredFactory key1{
         settings->SetZeroPaddingFactor(globalConfig->zeroPaddingFactor());
         settings->colorScheme = globalConfig->colorScheme();
         settings->stereoCombined = globalConfig->stereoCombined();
-        settings->stereoBalanceGain = globalConfig->stereoBalanceGain();
+        settings->stereoBalancePalette = globalConfig->stereoBalancePalette();
         settings->scaleType = globalConfig->scale();
-        settings->algorithm = globalConfig->algorithm();
+        settings->SetAlgorithm(globalConfig->algorithm());
 
         return settings;
     }
@@ -75,7 +74,7 @@ Au3SpectrogramSettings::Au3SpectrogramSettings(const Au3SpectrogramSettings& oth
     , frequencyGain(other.frequencyGain)
     , colorScheme(other.colorScheme)
     , stereoCombined(other.stereoCombined)
-    , stereoBalanceGain(other.stereoBalanceGain)
+    , stereoBalancePalette(other.stereoBalancePalette)
     , scaleType(other.scaleType)
     , algorithm(other.algorithm)
 
@@ -94,6 +93,10 @@ Au3SpectrogramSettings::Au3SpectrogramSettings(const Au3SpectrogramSettings& oth
 Au3SpectrogramSettings& Au3SpectrogramSettings::operator=(const Au3SpectrogramSettings& other)
 {
     if (this != &other) {
+        const bool windowsChanged = m_windowType != other.m_windowType
+                                    || m_windowSize != other.m_windowSize
+                                    || m_zeroPaddingFactor != other.m_zeroPaddingFactor
+                                    || algorithm != other.algorithm;
         minFreq = other.minFreq;
         maxFreq = other.maxFreq;
         range = other.range;
@@ -104,12 +107,14 @@ Au3SpectrogramSettings& Au3SpectrogramSettings::operator=(const Au3SpectrogramSe
         m_zeroPaddingFactor = other.m_zeroPaddingFactor;
         colorScheme = other.colorScheme;
         stereoCombined = other.stereoCombined;
-        stereoBalanceGain = other.stereoBalanceGain;
+        stereoBalancePalette = other.stereoBalancePalette;
         scaleType = other.scaleType;
         algorithm = other.algorithm;
 
-        // Invalidate the caches
-        DestroyWindows();
+        // Display-only changes do not alter the FFT plan or window functions.
+        if (windowsChanged) {
+            DestroyWindows();
+        }
     }
     return *this;
 }
@@ -138,7 +143,7 @@ void Au3SpectrogramSettings::WriteXMLAttributes(XMLWriter& writer) const
     writer.WriteAttr("zeroPaddingFactor", m_zeroPaddingFactor);
     writer.WriteAttr("colorScheme", static_cast<int>(colorScheme));
     writer.WriteAttr("stereoCombined", stereoCombined);
-    writer.WriteAttr("stereoBalanceGain", stereoBalanceGain);
+    writer.WriteAttr("stereoBalancePalette", static_cast<int>(stereoBalancePalette));
     writer.WriteAttr("scaleType", static_cast<int>(scaleType));
     writer.WriteAttr("algorithm", static_cast<int>(algorithm));
 }
@@ -180,14 +185,18 @@ bool Au3SpectrogramSettings::HandleXMLAttribute(const std::string_view& attr, co
     } else if (attr == "stereoCombined" && valueView.TryGet(nValue)) {
         stereoCombined = nValue != 0;
         return true;
-    } else if (attr == "stereoBalanceGain" && valueView.TryGet(nValueDbl)) {
-        stereoBalanceGain = std::clamp(nValueDbl, 0.25, 12.0);
+    } else if (attr == "stereoBalancePalette") {
+        stereoBalancePalette = valueView.TryGet(nValue)
+                               ? stereoBalancePaletteFromInt(nValue) : StereoBalancePalette::RedBlue;
+        return true;
+    } else if (attr == "stereoBalanceGain") {
+        // The former ratio-contrast control has no meaning for independent channels.
         return true;
     } else if (attr == "scaleType" && valueView.TryGet(nValue)) {
         scaleType = static_cast<SpectrogramScale>(nValue);
         return true;
     } else if (attr == "algorithm" && valueView.TryGet(nValue)) {
-        algorithm = static_cast<SpectrogramAlgorithm>(nValue);
+        SetAlgorithm(static_cast<SpectrogramAlgorithm>(nValue));
         return true;
     }
     return false;
@@ -301,6 +310,9 @@ static_assert(isPowerOfTwo(4) == true);
 void Au3SpectrogramSettings::SetWindowSize(int size)
 {
     assert(isPowerOfTwo(size));
+    if (m_windowSize == size) {
+        return;
+    }
     m_windowSize = size;
     DestroyWindows();
 }
@@ -329,13 +341,29 @@ size_t Au3SpectrogramSettings::NBins() const
 void Au3SpectrogramSettings::SetZeroPaddingFactor(int factor)
 {
     assert(isPowerOfTwo(factor));
+    if (m_zeroPaddingFactor == factor) {
+        return;
+    }
     m_zeroPaddingFactor = factor;
     DestroyWindows();
 }
 
 void Au3SpectrogramSettings::SetWindowType(SpectrogramWindowType type)
 {
+    if (m_windowType == type) {
+        return;
+    }
     m_windowType = type;
+    DestroyWindows();
+}
+
+void Au3SpectrogramSettings::SetAlgorithm(SpectrogramAlgorithm value)
+{
+    if (algorithm == value) {
+        return;
+    }
+    algorithm = value;
+    // Pitch ignores zero-padding, so changing algorithms can change FFT size.
     DestroyWindows();
 }
 

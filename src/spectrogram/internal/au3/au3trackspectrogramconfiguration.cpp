@@ -11,8 +11,6 @@
 
 #include "framework/global/log.h"
 
-#include <algorithm>
-
 #include "au3-project/Project.h"
 
 namespace au::spectrogram {
@@ -170,15 +168,15 @@ void Au3TrackSpectrogramConfiguration::setStereoCombined(bool value)
     }
 }
 
-double Au3TrackSpectrogramConfiguration::stereoBalanceGain()
+StereoBalancePalette Au3TrackSpectrogramConfiguration::stereoBalancePalette()
 {
-    return maybeReloadSettings() ? m_settings->stereoBalanceGain : 2.5;
+    return maybeReloadSettings() ? m_settings->stereoBalancePalette : StereoBalancePalette::RedBlue;
 }
 
-void Au3TrackSpectrogramConfiguration::setStereoBalanceGain(double value)
+void Au3TrackSpectrogramConfiguration::setStereoBalancePalette(StereoBalancePalette value)
 {
     if (maybeReloadSettings()) {
-        m_settings->stereoBalanceGain = std::clamp(value, 0.25, 12.0);
+        m_settings->stereoBalancePalette = stereoBalancePaletteFromInt(static_cast<int>(value));
     }
 }
 
@@ -217,7 +215,7 @@ void Au3TrackSpectrogramConfiguration::setAlgorithm(SpectrogramAlgorithm value)
     if (m_settings->algorithm == value) {
         return;
     }
-    m_settings->algorithm = value;
+    m_settings->SetAlgorithm(value);
 }
 
 SpectrogramWindowType Au3TrackSpectrogramConfiguration::windowType()

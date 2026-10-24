@@ -67,7 +67,7 @@ void TrackSpectrogramSettingsModel::componentComplete()
     emit colorHighBoostDbPerDecChanged();
     emit colorSchemeChanged();
     emit stereoCombinedChanged();
-    emit stereoBalanceGainChanged();
+    emit stereoBalancePaletteChanged();
     emit scaleChanged();
     emit algorithmChanged();
     emit windowTypeChanged();
@@ -119,7 +119,7 @@ void TrackSpectrogramSettingsModel::setUseGlobalSettings(bool value)
         emit colorHighBoostDbPerDecChanged();
         emit colorSchemeChanged();
         emit stereoCombinedChanged();
-        emit stereoBalanceGainChanged();
+        emit stereoBalancePaletteChanged();
         emit scaleChanged();
         emit algorithmChanged();
         emit windowTypeChanged();
@@ -246,18 +246,19 @@ void TrackSpectrogramSettingsModel::setStereoCombined(bool value)
     onSettingChanged();
 }
 
-double TrackSpectrogramSettingsModel::stereoBalanceGain() const
+int TrackSpectrogramSettingsModel::stereoBalancePalette() const
 {
-    return m_trackConfig ? m_trackConfig->stereoBalanceGain() : 2.5;
+    return m_trackConfig ? static_cast<int>(m_trackConfig->stereoBalancePalette()) : 0;
 }
 
-void TrackSpectrogramSettingsModel::setStereoBalanceGain(double value)
+void TrackSpectrogramSettingsModel::setStereoBalancePalette(int value)
 {
-    if (!m_trackConfig || m_trackConfig->stereoBalanceGain() == value) {
+    const auto palette = stereoBalancePaletteFromInt(value);
+    if (!m_trackConfig || m_trackConfig->stereoBalancePalette() == palette) {
         return;
     }
-    m_trackConfig->setStereoBalanceGain(value);
-    emit stereoBalanceGainChanged();
+    m_trackConfig->setStereoBalancePalette(palette);
+    emit stereoBalancePaletteChanged();
     onSettingChanged();
 }
 

@@ -46,9 +46,11 @@ public:
     int frequencyGain = 0;
     SpectrogramColorScheme colorScheme = static_cast<SpectrogramColorScheme>(0);
     bool stereoCombined = false;
-    double stereoBalanceGain = 2.5;
+    StereoBalancePalette stereoBalancePalette = StereoBalancePalette::RedBlue;
     SpectrogramScale scaleType = static_cast<SpectrogramScale>(0);
     SpectrogramAlgorithm algorithm = static_cast<SpectrogramAlgorithm>(0);
+
+    void SetAlgorithm(SpectrogramAlgorithm value);
 
     bool isConstantQ() const { return false; }  // If you want to play around with ConstantQ analysis, you can Change to for instance WindowType() == SpectrogramWindowType::Gaussian45
 

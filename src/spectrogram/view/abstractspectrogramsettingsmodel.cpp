@@ -57,6 +57,15 @@ QList<QString> AbstractSpectrogramSettingsModel::colorSchemeNames() const
     return names;
 }
 
+QList<QString> AbstractSpectrogramSettingsModel::stereoBalancePaletteNames() const
+{
+    return {
+        muse::qtrc("spectrogram/preferences", "Red / blue"),
+        muse::qtrc("spectrogram/preferences", "Magenta / green"),
+        muse::qtrc("spectrogram/preferences", "Orange / blue")
+    };
+}
+
 QString AbstractSpectrogramSettingsModel::scaleName(int scale) const
 {
     switch (static_cast<SpectrogramScale>(scale)) {
