@@ -11,6 +11,8 @@
 
 #include "framework/global/log.h"
 
+#include <algorithm>
+
 #include "au3-project/Project.h"
 
 namespace au::spectrogram {
@@ -154,6 +156,30 @@ void Au3TrackSpectrogramConfiguration::setColorScheme(SpectrogramColorScheme val
         return;
     }
     m_settings->colorScheme = value;
+}
+
+bool Au3TrackSpectrogramConfiguration::stereoCombined()
+{
+    return maybeReloadSettings() && m_settings->stereoCombined;
+}
+
+void Au3TrackSpectrogramConfiguration::setStereoCombined(bool value)
+{
+    if (maybeReloadSettings()) {
+        m_settings->stereoCombined = value;
+    }
+}
+
+double Au3TrackSpectrogramConfiguration::stereoBalanceGain()
+{
+    return maybeReloadSettings() ? m_settings->stereoBalanceGain : 2.5;
+}
+
+void Au3TrackSpectrogramConfiguration::setStereoBalanceGain(double value)
+{
+    if (maybeReloadSettings()) {
+        m_settings->stereoBalanceGain = std::clamp(value, 0.25, 12.0);
+    }
 }
 
 SpectrogramScale Au3TrackSpectrogramConfiguration::scale()

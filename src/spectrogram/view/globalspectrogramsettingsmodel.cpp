@@ -31,6 +31,12 @@ void GlobalSpectrogramSettingsModel::componentComplete()
     configuration()->colorSchemeChanged().onReceive(this, [this](auto){
         emit colorSchemeChanged();
     });
+    configuration()->stereoCombinedChanged().onReceive(this, [this](auto){
+        emit stereoCombinedChanged();
+    });
+    configuration()->stereoBalanceGainChanged().onReceive(this, [this](auto){
+        emit stereoBalanceGainChanged();
+    });
     configuration()->scaleChanged().onReceive(this, [this](auto){
         emit scaleChanged();
     });
@@ -118,6 +124,31 @@ void GlobalSpectrogramSettingsModel::setColorScheme(int value)
     configuration()->setColorScheme(static_cast<spectrogram::SpectrogramColorScheme>(value));
 }
 
+bool GlobalSpectrogramSettingsModel::stereoCombined() const
+{
+    return configuration()->stereoCombined();
+}
+
+void GlobalSpectrogramSettingsModel::setStereoCombined(bool value)
+{
+    // The combined palette is defined from paired FFT powers. Pitch uses
+    // autocorrelation values, so select the compatible algorithm explicitly.
+    if (value && configuration()->algorithm() != SpectrogramAlgorithm::Frequencies) {
+        configuration()->setAlgorithm(SpectrogramAlgorithm::Frequencies);
+    }
+    configuration()->setStereoCombined(value);
+}
+
+double GlobalSpectrogramSettingsModel::stereoBalanceGain() const
+{
+    return configuration()->stereoBalanceGain();
+}
+
+void GlobalSpectrogramSettingsModel::setStereoBalanceGain(double value)
+{
+    configuration()->setStereoBalanceGain(value);
+}
+
 int GlobalSpectrogramSettingsModel::scale() const
 {
     return static_cast<int>(configuration()->scale());
@@ -135,7 +166,11 @@ int GlobalSpectrogramSettingsModel::algorithm() const
 
 void GlobalSpectrogramSettingsModel::setAlgorithm(int value)
 {
-    configuration()->setAlgorithm(static_cast<spectrogram::SpectrogramAlgorithm>(value));
+    const auto algorithm = static_cast<spectrogram::SpectrogramAlgorithm>(value);
+    if (algorithm != SpectrogramAlgorithm::Frequencies && configuration()->stereoCombined()) {
+        configuration()->setStereoCombined(false);
+    }
+    configuration()->setAlgorithm(algorithm);
 }
 
 int GlobalSpectrogramSettingsModel::windowType() const

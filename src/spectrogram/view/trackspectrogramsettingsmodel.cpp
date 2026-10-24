@@ -66,6 +66,8 @@ void TrackSpectrogramSettingsModel::componentComplete()
     emit colorRangeDbChanged();
     emit colorHighBoostDbPerDecChanged();
     emit colorSchemeChanged();
+    emit stereoCombinedChanged();
+    emit stereoBalanceGainChanged();
     emit scaleChanged();
     emit algorithmChanged();
     emit windowTypeChanged();
@@ -116,6 +118,8 @@ void TrackSpectrogramSettingsModel::setUseGlobalSettings(bool value)
         emit colorRangeDbChanged();
         emit colorHighBoostDbPerDecChanged();
         emit colorSchemeChanged();
+        emit stereoCombinedChanged();
+        emit stereoBalanceGainChanged();
         emit scaleChanged();
         emit algorithmChanged();
         emit windowTypeChanged();
@@ -123,6 +127,10 @@ void TrackSpectrogramSettingsModel::setUseGlobalSettings(bool value)
         emit zeroPaddingFactorChanged();
     }
     emit useGlobalSettingsChanged();
+    // Switching inheritance changes the effective display configuration even
+    // when no individual control was edited.  Views and the lightweight QML
+    // display model must repaint immediately.
+    spectrogramService()->notifyAboutTrackSpectrogramConfigurationChanged(m_trackId);
 }
 
 int TrackSpectrogramSettingsModel::minFreq() const
@@ -217,6 +225,42 @@ void TrackSpectrogramSettingsModel::setColorScheme(int value)
     onSettingChanged();
 }
 
+bool TrackSpectrogramSettingsModel::stereoCombined() const
+{
+    return m_trackConfig && m_trackConfig->stereoCombined();
+}
+
+void TrackSpectrogramSettingsModel::setStereoCombined(bool value)
+{
+    if (!m_trackConfig || m_trackConfig->stereoCombined() == value) {
+        return;
+    }
+    // Color balance combines raw FFT powers; Pitch/autocorrelation values do
+    // not have those semantics.
+    if (value && m_trackConfig->algorithm() != SpectrogramAlgorithm::Frequencies) {
+        m_trackConfig->setAlgorithm(SpectrogramAlgorithm::Frequencies);
+        emit algorithmChanged();
+    }
+    m_trackConfig->setStereoCombined(value);
+    emit stereoCombinedChanged();
+    onSettingChanged();
+}
+
+double TrackSpectrogramSettingsModel::stereoBalanceGain() const
+{
+    return m_trackConfig ? m_trackConfig->stereoBalanceGain() : 2.5;
+}
+
+void TrackSpectrogramSettingsModel::setStereoBalanceGain(double value)
+{
+    if (!m_trackConfig || m_trackConfig->stereoBalanceGain() == value) {
+        return;
+    }
+    m_trackConfig->setStereoBalanceGain(value);
+    emit stereoBalanceGainChanged();
+    onSettingChanged();
+}
+
 int TrackSpectrogramSettingsModel::scale() const
 {
     return m_trackConfig ? static_cast<int>(m_trackConfig->scale()) : 0;
@@ -243,6 +287,10 @@ void TrackSpectrogramSettingsModel::setAlgorithm(int value)
     const auto algorithm = static_cast<SpectrogramAlgorithm>(value);
     if (m_trackConfig->algorithm() == algorithm) {
         return;
+    }
+    if (algorithm != SpectrogramAlgorithm::Frequencies && m_trackConfig->stereoCombined()) {
+        m_trackConfig->setStereoCombined(false);
+        emit stereoCombinedChanged();
     }
     m_trackConfig->setAlgorithm(algorithm);
     emit algorithmChanged();

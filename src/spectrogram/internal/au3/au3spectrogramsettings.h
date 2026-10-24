@@ -45,6 +45,8 @@ public:
     int gain = 0;
     int frequencyGain = 0;
     SpectrogramColorScheme colorScheme = static_cast<SpectrogramColorScheme>(0);
+    bool stereoCombined = false;
+    double stereoBalanceGain = 2.5;
     SpectrogramScale scaleType = static_cast<SpectrogramScale>(0);
     SpectrogramAlgorithm algorithm = static_cast<SpectrogramAlgorithm>(0);
 

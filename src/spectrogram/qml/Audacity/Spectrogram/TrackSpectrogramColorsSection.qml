@@ -89,5 +89,58 @@ TrackSpectrogramBaseSection {
                 }
             }
         }
+
+        CheckBox {
+            id: combinedStereoCheckBox
+
+            text: qsTrc("spectrogram/settings", "Combine stereo channels by balance")
+            checked: settingsModel.stereoCombined
+
+            navigation.panel: root.navigation
+            navigation.name: "ColorsCombinedStereoCheckBox"
+            navigation.order: repeater.count + 1
+
+            onClicked: settingsModel.stereoCombined = checked
+        }
+
+        Row {
+            spacing: 0
+            visible: combinedStereoCheckBox.checked
+
+            StyledTextLabel {
+                width: root.mediumControlWidth
+                anchors.verticalCenter: parent.verticalCenter
+
+                text: qsTrc("spectrogram/settings", "Balance contrast")
+                elide: Text.ElideNone
+                wrapMode: Text.NoWrap
+                horizontalAlignment: Text.AlignLeft
+            }
+
+            IncrementalPropertyControl {
+                width: root.mediumControlWidth
+
+                navigation.panel: root.navigation
+                navigation.name: "ColorsStereoBalanceGainControl"
+                navigation.order: repeater.count + 2
+
+                minValue: 0.25
+                maxValue: 12
+                decimals: 2
+                step: 0.25
+                currentValue: settingsModel.stereoBalanceGain
+                onValueEditingFinished: function (newValue) {
+                    settingsModel.stereoBalanceGain = newValue
+                }
+            }
+        }
+
+        StyledTextLabel {
+            width: parent.width
+            visible: combinedStereoCheckBox.checked
+            text: qsTrc("spectrogram/settings", "Brightness shows mean power. Red: left, purple: equal, blue: right.")
+            wrapMode: Text.WordWrap
+            color: ui.theme.fontSecondaryColor
+        }
     }
 }

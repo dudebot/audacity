@@ -41,6 +41,8 @@ static const AttachedTrackObjects::RegisteredFactory key1{
         settings->SetWindowSize(1 << globalConfig->winSizeLog2());
         settings->SetZeroPaddingFactor(globalConfig->zeroPaddingFactor());
         settings->colorScheme = globalConfig->colorScheme();
+        settings->stereoCombined = globalConfig->stereoCombined();
+        settings->stereoBalanceGain = globalConfig->stereoBalanceGain();
         settings->scaleType = globalConfig->scale();
         settings->algorithm = globalConfig->algorithm();
 
@@ -72,6 +74,8 @@ Au3SpectrogramSettings::Au3SpectrogramSettings(const Au3SpectrogramSettings& oth
     , gain(other.gain)
     , frequencyGain(other.frequencyGain)
     , colorScheme(other.colorScheme)
+    , stereoCombined(other.stereoCombined)
+    , stereoBalanceGain(other.stereoBalanceGain)
     , scaleType(other.scaleType)
     , algorithm(other.algorithm)
 
@@ -99,6 +103,8 @@ Au3SpectrogramSettings& Au3SpectrogramSettings::operator=(const Au3SpectrogramSe
         m_windowSize = other.m_windowSize;
         m_zeroPaddingFactor = other.m_zeroPaddingFactor;
         colorScheme = other.colorScheme;
+        stereoCombined = other.stereoCombined;
+        stereoBalanceGain = other.stereoBalanceGain;
         scaleType = other.scaleType;
         algorithm = other.algorithm;
 
@@ -131,6 +137,8 @@ void Au3SpectrogramSettings::WriteXMLAttributes(XMLWriter& writer) const
     writer.WriteAttr("windowSize", m_windowSize);
     writer.WriteAttr("zeroPaddingFactor", m_zeroPaddingFactor);
     writer.WriteAttr("colorScheme", static_cast<int>(colorScheme));
+    writer.WriteAttr("stereoCombined", stereoCombined);
+    writer.WriteAttr("stereoBalanceGain", stereoBalanceGain);
     writer.WriteAttr("scaleType", static_cast<int>(scaleType));
     writer.WriteAttr("algorithm", static_cast<int>(algorithm));
 }
@@ -168,6 +176,12 @@ bool Au3SpectrogramSettings::HandleXMLAttribute(const std::string_view& attr, co
         return true;
     } else if (attr == "colorScheme" && valueView.TryGet(nValue)) {
         colorScheme = static_cast<SpectrogramColorScheme>(nValue);
+        return true;
+    } else if (attr == "stereoCombined" && valueView.TryGet(nValue)) {
+        stereoCombined = nValue != 0;
+        return true;
+    } else if (attr == "stereoBalanceGain" && valueView.TryGet(nValueDbl)) {
+        stereoBalanceGain = std::clamp(nValueDbl, 0.25, 12.0);
         return true;
     } else if (attr == "scaleType" && valueView.TryGet(nValue)) {
         scaleType = static_cast<SpectrogramScale>(nValue);

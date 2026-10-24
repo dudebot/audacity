@@ -12,6 +12,8 @@
 
 #include "au3-wave-track/WaveClip.h"
 
+#include <vector>
+
 namespace au::spectrogram {
 namespace {
 std::pair<sampleCount, sampleCount> GetSelectedSampleIndices(
@@ -59,6 +61,20 @@ float findValue(const float* spectrum, float bin0, float bin1, unsigned nBins, b
         value = (value + range + gain) / (double)range;
     }
     value = std::min(1.0f, std::max(0.0f, value));
+    return value;
+}
+
+// Unlike findValue(), leave the pooled FFT value in dB.  Combined stereo must
+// combine powers before display-range clipping, otherwise channel balance is
+// corrupted whenever either channel reaches the display floor or ceiling.
+float findRawDbValue(const float* spectrum, float bin0, float bin1, unsigned nBins)
+{
+    int index = std::min<int>(nBins - 1, static_cast<int>(floor(.5f + bin0)));
+    const int limitIndex = std::min<int>(nBins, static_cast<int>(floor(.5f + bin1)));
+    float value = spectrum[index];
+    while (++index < limitIndex) {
+        value = std::max(value, spectrum[index]);
+    }
     return value;
 }
 
@@ -217,6 +233,75 @@ void Au3SpectrogramClipChannelPainter::fillImage(QImage& image,
             unsigned char rv, gv, bv;
             GetColorGradient(value, selected, colorScheme, &rv, &gv, &bv);
             image.setPixelColor(xx, imageHeight - yy - 1, QColor(rv, gv, bv));
+        }
+    }
+}
+
+void Au3SpectrogramClipChannelPainter::fillStereoCombinedImage(
+    QImage& image, const ViewInfo& viewInfo, const SelectionInfo& selectionInfo,
+    const SpectrogramTrackContext& tc, WaveClipChannel& left, WaveClipChannel& right)
+{
+    auto& spectrumCache = WaveClipSpectrumCache::Get(left);
+    if (!spectrumCache.IsStereo()
+        || left.GetChannelIndex() == right.GetChannelIndex()
+        || tc.settings.algorithm != SpectrogramAlgorithm::Frequencies) {
+        // Pitch and autocorrelation are not power spectra, so never mislabel
+        // them as stereo balance.  The caller should use ordinary rendering.
+        fillImage(image, viewInfo, selectionInfo, tc, left);
+        return;
+    }
+
+    auto& settings = tc.settings;
+    const QRect paintableRect{ 0, 0, viewportWidth(viewInfo), image.height() };
+    const ClipTimes clipTimes{ left.GetPlayStartTime(), left.GetPlayEndTime(), left.GetStretchRatio() };
+    const ClipParameters clipParams { clipTimes, paintableRect, viewInfo };
+    const int imageWidth = image.width();
+    const int imageHeight = image.height();
+    const double visibleStartTime = clipParams.visibleStartTime();
+    const double sampleRate = left.GetRate();
+    const double stretchRatio = left.GetStretchRatio();
+    const double playStartTime = left.GetPlayStartTime();
+    const double leftOffset = clipParams.leftOffset();
+
+    const float* leftSpectrum = nullptr;
+    const float* rightSpectrum = nullptr;
+    const long long* ignoredWhere = nullptr;
+    spectrumCache.GetSpectrogram(left, leftSpectrum, settings, ignoredWhere, imageWidth,
+                                 visibleStartTime, viewInfo.pixelsPerSecond);
+    spectrumCache.GetSpectrogram(right, rightSpectrum, settings, ignoredWhere, imageWidth,
+                                 visibleStartTime, viewInfo.pixelsPerSecond);
+    const auto nBins = settings.NBins();
+    const double binUnit = sampleRate / static_cast<double>(settings.GetFFTLength());
+    const NumberScale numberScale(settings.scaleType, tc.minFreq, tc.maxFreq);
+    std::vector<float> bins(imageHeight + 1);
+    {
+        NumberScale::Iterator it = numberScale.begin(imageHeight);
+        for (int yy = 0; yy <= imageHeight; ++yy) {
+            bins[yy] = std::clamp(settings.findBin(*it, binUnit), 0.f, static_cast<float>(nBins - 1));
+            if (yy != imageHeight) {
+                ++it;
+            }
+        }
+    }
+
+    const auto [ssel0, ssel1] = GetSelectedSampleIndices(selectionInfo, left, tc.trackIsSelected);
+    const float selBinLo = settings.findBin(selectionInfo.startFrequency, binUnit);
+    const float selBinHi = settings.findBin(selectionInfo.endFrequency, binUnit);
+    const int selectedX = static_cast<int>(timeToPosition(viewInfo, selectionInfo.startTime) - leftOffset);
+    for (int xx = 0; xx < imageWidth; ++xx) {
+        const auto w0 = sampleCount(.5 + sampleRate / stretchRatio
+            * (positionToTime(viewInfo, xx + leftOffset) - playStartTime));
+        const auto w1 = sampleCount(.5 + sampleRate / stretchRatio
+            * (positionToTime(viewInfo, xx + 1 + leftOffset) - playStartTime));
+        const bool timeSelected = selectionInfo.clipSelected || (ssel0 <= w0 && w1 < ssel1) || xx == selectedX;
+        for (int yy = 0; yy < imageHeight; ++yy) {
+            const float leftDb = findRawDbValue(leftSpectrum + nBins * xx, bins[yy], bins[yy + 1], nBins);
+            const float rightDb = findRawDbValue(rightSpectrum + nBins * xx, bins[yy], bins[yy + 1], nBins);
+            const bool frequencySelected = (selBinLo < 0 || selBinLo < bins[yy + 1])
+                                           && (selBinHi < 0 || selBinHi > bins[yy]);
+            const auto color = stereoBalanceColor(leftDb, rightDb, settings.gain, settings.range,
+                                                  settings.stereoBalanceGain, timeSelected && frequencySelected);
+            image.setPixelColor(xx, imageHeight - yy - 1, QColor(color.red, color.green, color.blue));
         }
     }
 }

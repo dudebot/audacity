@@ -20,6 +20,7 @@ class ClipChannelSpectrogramView : public QQuickPaintedItem, public muse::async:
     Q_PROPERTY(int clipId READ clipId WRITE setClipId NOTIFY clipIdChanged FINAL)
     Q_PROPERTY(int trackId READ trackId WRITE setTrackId NOTIFY trackIdChanged FINAL)
     Q_PROPERTY(int channel READ channel WRITE setChannel NOTIFY channelChanged FINAL)
+    Q_PROPERTY(bool combinedStereo READ combinedStereo WRITE setCombinedStereo NOTIFY combinedStereoChanged FINAL)
     Q_PROPERTY(int timelineIndentWidth READ timelineIndentWidth WRITE setTimelineIndentWidth NOTIFY timelineIndentWidthChanged FINAL)
     Q_PROPERTY(double zoom READ zoom WRITE setZoom NOTIFY zoomChanged FINAL)
     Q_PROPERTY(double frameStartTime READ frameStartTime WRITE setFrameStartTime NOTIFY frameStartTimeChanged FINAL)
@@ -48,6 +49,9 @@ public:
 
     int channel() const { return m_channel; }
     void setChannel(int channel);
+
+    bool combinedStereo() const { return m_combinedStereo; }
+    void setCombinedStereo(bool combined);
 
     int timelineIndentWidth() const { return m_timelineIndentWidth; }
     void setTimelineIndentWidth(int width);
@@ -80,6 +84,7 @@ signals:
     void clipIdChanged();
     void trackIdChanged();
     void channelChanged();
+    void combinedStereoChanged();
     void timelineIndentWidthChanged();
     void zoomChanged();
     void frameStartTimeChanged();
@@ -97,6 +102,7 @@ private:
     int m_clipId = -1;
     int m_trackId = -1;
     int m_channel = 0;
+    bool m_combinedStereo = false;
     int m_timelineIndentWidth = 0;
     double m_zoom = 1.0;
     double m_frameStartTime = 0.0;

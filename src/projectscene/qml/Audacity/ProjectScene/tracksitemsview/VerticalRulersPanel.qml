@@ -6,6 +6,7 @@ import Muse.Ui
 import Muse.UiComponents
 
 import Audacity.ProjectScene
+import Audacity.Spectrogram
 
 Rectangle {
     id: root
@@ -60,6 +61,13 @@ Rectangle {
 
             TrackViewStateModel {
                 id: trackViewState
+                trackId: model.trackId
+            }
+
+            // Keep the ruler geometry synchronized with the resolved
+            // per-track/global spectrogram display setting.
+            TrackSpectrogramDisplayModel {
+                id: spectrogramDisplay
                 trackId: model.trackId
             }
 
@@ -231,6 +239,7 @@ Rectangle {
                                 trackId: model.trackId
                                 isStereo: model.isStereo
                                 channelHeightRatio: trackViewState.channelHeightRatio
+                                stereoCombined: spectrogramDisplay.stereoCombined
                             }
                         }
                     }

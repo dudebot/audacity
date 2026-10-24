@@ -14,6 +14,9 @@ Item {
     required property bool verticalSelectionEditInProgress
 
     required property bool isStereo
+    // Combined stereo is a single frequency plane. The C++ painter receives
+    // channel zero plus this flag and reads both raw FFT caches itself.
+    required property bool stereoCombined
     required property double channelHeightRatio
     required property int clipId
     required property int trackId
@@ -45,7 +48,7 @@ Item {
         if (y < 0 || y > height) {
             return null
         }
-        const channel = y < height * channelHeightRatio ? 0 : 1
+        const channel = (!root.isStereo || root.stereoCombined || y < height * channelHeightRatio) ? 0 : 1
         const item = repeater.itemAt(channel)
         const spectrogramY = item.mapToItem(root.canvas, 0, 0).y
         return SpectrogramHitFactory.createSpectrogramHit(root.trackId, channel, spectrogramY, item.height)
@@ -59,14 +62,14 @@ Item {
         Repeater {
             id: repeater
 
-            model: root.isStereo ? 2 : 1
+            model: root.isStereo && !root.stereoCombined ? 2 : 1
 
             ClipChannelSpectrogramView {
                 id: spectrogramView
 
                 Layout.fillWidth: true
                 Layout.preferredHeight: {
-                    if (!root.isStereo) {
+                    if (!root.isStereo || root.stereoCombined) {
                         return root.height
                     }
                     return root.height * (index === 0 ? root.channelHeightRatio : (1.0 - root.channelHeightRatio))
@@ -75,6 +78,7 @@ Item {
                 clipId: root.clipId
                 trackId: root.trackId
                 channel: index
+                stereoCombined: root.stereoCombined && root.isStereo
                 timelineIndentWidth: root.timelineIndentWidth
                 zoom: root.zoom
                 frameStartTime: root.frameStartTime

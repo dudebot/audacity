@@ -26,6 +26,7 @@ Rectangle {
     property int speedPercentage: 0
     property bool isSpeedModified: false
     property bool showChannelSplitter: false
+    property bool stereoCombined: false
     property alias channelHeightRatio: waveChannelSplitter.channelHeightRatio
     property var canvas: null
     required property int headerHeight
@@ -1088,6 +1089,7 @@ Rectangle {
                     spectralSelectionEnabled: root.spectralSelectionEnabled
                     pressedSpectrogram: root.pressedSpectrogram
                     isStereo: root.showChannelSplitter
+                    stereoCombined: root.stereoCombined
                     channelHeightRatio: showChannelSplitter ? root.channelHeightRatio : 1
 
                     timelineIndentWidth: root.canvas.anchors.leftMargin
@@ -1105,7 +1107,7 @@ Rectangle {
                     ChannelSplitter {
                         anchors.fill: parent
 
-                        visible: root.showChannelSplitter
+                        visible: root.showChannelSplitter && !root.stereoCombined
 
                         channelHeightRatio: parent.channelHeightRatio
                         editable: root.enableCursorInteraction && root.asymmetricStereoHeightsPossible

@@ -12,6 +12,7 @@ Item {
     required property real sampleRate
     required property real channelHeightRatio
     required property bool isStereo
+    required property bool stereoCombined
 
     required property bool selectionInProgress
     required property real selectionStartPosition
@@ -64,7 +65,7 @@ Item {
         id: leftOrMonoContainer
 
         y: 0
-        height: root.height * (root.isStereo ? root.channelHeightRatio : 1)
+        height: root.height * (root.isStereo && !root.stereoCombined ? root.channelHeightRatio : 1)
         anchors.left: parent.left
         anchors.right: parent.right
 
@@ -114,7 +115,7 @@ Item {
         selectionEndTime: root.selectionEndTime
         selectionController: root.selectionController
 
-        visible: root.isStereo
+        visible: root.isStereo && !root.stereoCombined
         enabled: root.visible && root.enabled
 
         onSelectionHorizontalResize: function (x1, x2, completed) {

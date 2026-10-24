@@ -59,6 +59,16 @@ void ClipChannelSpectrogramView::setChannel(int channel)
     update();
 }
 
+void ClipChannelSpectrogramView::setCombinedStereo(bool combined)
+{
+    if (m_combinedStereo == combined) {
+        return;
+    }
+    m_combinedStereo = combined;
+    emit combinedStereoChanged();
+    update();
+}
+
 void ClipChannelSpectrogramView::setTimelineIndentWidth(int width)
 {
     if (m_timelineIndentWidth == width) {
@@ -191,6 +201,10 @@ void ClipChannelSpectrogramView::paint(QPainter* painter)
         m_zoom
     };
 
-    spectrogramPainter()->paintClipChannel(*painter, channelInfo, viewInfo, selectionInfo);
+    if (m_combinedStereo && m_channel == 0) {
+        spectrogramPainter()->paintCombinedStereoClip(*painter, channelInfo, viewInfo, selectionInfo);
+    } else {
+        spectrogramPainter()->paintClipChannel(*painter, channelInfo, viewInfo, selectionInfo);
+    }
 }
 }

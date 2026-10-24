@@ -31,6 +31,14 @@ public:
     void setColorScheme(SpectrogramColorScheme value) override;
     muse::async::Channel<SpectrogramColorScheme> colorSchemeChanged() const override;
 
+    bool stereoCombined() override;
+    void setStereoCombined(bool value) override;
+    muse::async::Channel<bool> stereoCombinedChanged() const override;
+
+    double stereoBalanceGain() override;
+    void setStereoBalanceGain(double value) override;
+    muse::async::Channel<double> stereoBalanceGainChanged() const override;
+
     int colorGainDb() override;
     void setColorGainDb(int value) override;
     muse::async::Channel<int> colorGainDbChanged() const override;
@@ -70,6 +78,8 @@ private:
     muse::async::Channel<double> m_maxFreqChanged;
     muse::async::Channel<bool> m_spectralSelectionEnabledChanged;
     muse::async::Channel<SpectrogramColorScheme> m_colorSchemeChanged;
+    muse::async::Channel<bool> m_stereoCombinedChanged;
+    muse::async::Channel<double> m_stereoBalanceGainChanged;
     muse::async::Channel<int> m_colorGainDbChanged;
     muse::async::Channel<int> m_colorRangeDbChanged;
     muse::async::Channel<int> m_colorHighBoostDbPerDecChanged;

@@ -24,6 +24,8 @@ public:
     virtual muse::async::Channel<double> minFreqChanged() const = 0;
     virtual muse::async::Channel<double> maxFreqChanged() const = 0;
     virtual muse::async::Channel<SpectrogramColorScheme> colorSchemeChanged() const = 0;
+    virtual muse::async::Channel<bool> stereoCombinedChanged() const = 0;
+    virtual muse::async::Channel<double> stereoBalanceGainChanged() const = 0;
     virtual muse::async::Channel<int> colorGainDbChanged() const = 0;
     virtual muse::async::Channel<int> colorRangeDbChanged() const = 0;
     virtual muse::async::Channel<int> colorHighBoostDbPerDecChanged() const = 0;

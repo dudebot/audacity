@@ -20,6 +20,7 @@
 #include "view/globalspectrogramsettingsmodel.h"
 #include "view/trackspectrogramcontextmenumodel.h"
 #include "view/trackspectrogramsettingsmodel.h"
+#include "view/trackspectrogramdisplaymodel.h"
 
 #include "view/spectrogramhit.h"
 #include "view/clipchannelspectrogramview.h"
@@ -82,6 +83,7 @@ void SpectrogramModule::registerUiTypes()
     qmlRegisterType<SpectrogramChannelRulerModel>("Audacity.Spectrogram", 1, 0, "SpectrogramChannelRulerModel");
     qmlRegisterType<TrackSpectrogramContextMenuModel>("Audacity.Spectrogram", 1, 0, "TrackSpectrogramContextMenuModel");
     qmlRegisterType<TrackSpectrogramSettingsModel>("Audacity.Spectrogram", 1, 0, "TrackSpectrogramSettingsModel");
+    qmlRegisterType<TrackSpectrogramDisplayModel>("Audacity.Spectrogram", 1, 0, "TrackSpectrogramDisplayModel");
     qmlRegisterSingletonType<SpectrogramHitFactory>("Audacity.Spectrogram", 1, 0, "SpectrogramHitFactory",
                                                     [](QQmlEngine*, QJSEngine*) -> QObject* {
         return new SpectrogramHitFactory();

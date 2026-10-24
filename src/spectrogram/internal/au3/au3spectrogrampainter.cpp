@@ -68,4 +68,42 @@ void Au3SpectrogramPainter::paintClipChannel(QPainter& qPainter, const ClipChann
     Au3SpectrogramClipChannelPainter::fillImage(image, viewInfo, selectionInfo, trackContext, *clipChannel);
     qPainter.drawImage(QPoint { channelInfo.xPaintBegin, 0 }, image);
 }
+
+void Au3SpectrogramPainter::paintCombinedStereoClip(QPainter& qPainter, const ClipChannelInfo& channelInfo,
+                                                    const ViewInfo& viewInfo, const SelectionInfo& selectionInfo)
+{
+    const auto au3Project = m_au3Project.lock();
+    IF_ASSERT_FAILED(au3Project) {
+        return;
+    }
+    const au3::Au3TrackId au3TrackId { channelInfo.trackId };
+    auto* const waveTrack = au3::DomAccessor::findWaveTrack(*au3Project, au3TrackId);
+    if (!waveTrack) {
+        return;
+    }
+    auto& settings = Au3SpectrogramSettings::Get(*waveTrack);
+    // Combined colors are defined only for FFT power spectra.  Callers may
+    // race a setting change, so retain a safe ordinary fallback here too.
+    if (settings.algorithm != SpectrogramAlgorithm::Frequencies) {
+        paintClipChannel(qPainter, channelInfo, viewInfo, selectionInfo);
+        return;
+    }
+    ::WaveClip* const clip = au3::DomAccessor::findWaveClip(waveTrack, static_cast<int64_t>(channelInfo.clipId)).get();
+    if (!clip) {
+        return;
+    }
+    const auto left = clip->GetChannel<WaveClipChannel>(0);
+    const auto right = clip->GetChannel<WaveClipChannel>(1);
+    if (!left || !right) {
+        paintClipChannel(qPainter, channelInfo, viewInfo, selectionInfo);
+        return;
+    }
+    Au3TrackSpectrogramConfiguration config(au3TrackId.raw(), *au3Project);
+    const auto [minFreq, maxFreq] = spectrogramBounds(config, waveTrack->GetRate());
+    const SpectrogramTrackContext trackContext { settings, waveTrack->IsSelected(), minFreq, maxFreq };
+    const int channelHeight = static_cast<int>(viewInfo.channelHeight);
+    QImage image { channelInfo.xPaintEnd - channelInfo.xPaintBegin, channelHeight, QImage::Format_RGB888 };
+    Au3SpectrogramClipChannelPainter::fillStereoCombinedImage(image, viewInfo, selectionInfo, trackContext, *left, *right);
+    qPainter.drawImage(QPoint { channelInfo.xPaintBegin, 0 }, image);
+}
 }

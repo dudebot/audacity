@@ -46,6 +46,12 @@ public:
     int colorScheme() const override;
     void setColorScheme(int value) override;
 
+    bool stereoCombined() const override;
+    void setStereoCombined(bool value) override;
+
+    double stereoBalanceGain() const override;
+    void setStereoBalanceGain(double value) override;
+
     int scale() const override;
     void setScale(int value) override;
 

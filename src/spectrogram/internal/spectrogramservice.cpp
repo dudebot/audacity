@@ -43,6 +43,8 @@ void SpectrogramService::copyConfiguration(ISpectrogramConfiguration& source,
     destination.setColorRangeDb(source.colorRangeDb());
     destination.setColorHighBoostDbPerDec(source.colorHighBoostDbPerDec());
     destination.setColorScheme(source.colorScheme());
+    destination.setStereoCombined(source.stereoCombined());
+    destination.setStereoBalanceGain(source.stereoBalanceGain());
     destination.setScale(source.scale());
     destination.setAlgorithm(source.algorithm());
     destination.setWindowType(source.windowType());

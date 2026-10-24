@@ -5,6 +5,8 @@
 
 #include "framework/global/settings.h"
 
+#include <algorithm>
+
 namespace au::spectrogram {
 namespace {
 static const std::string moduleName("spectrogram");
@@ -13,6 +15,8 @@ static const muse::Settings::Key MIN_FREQ(moduleName, "spectrogram/minFreq");
 static const muse::Settings::Key MAX_FREQ(moduleName, "spectrogram/maxFreq");
 static const muse::Settings::Key SPECTRAL_SELECTION_ENABLED(moduleName, "spectrogram/spectralSelectionEnabled");
 static const muse::Settings::Key COLOR_SCHEME(moduleName, "spectrogram/colorScheme");
+static const muse::Settings::Key STEREO_COMBINED(moduleName, "spectrogram/stereoCombined");
+static const muse::Settings::Key STEREO_BALANCE_GAIN(moduleName, "spectrogram/stereoBalanceGain");
 static const muse::Settings::Key COLOR_GAIN_DB(moduleName, "spectrogram/colorGainDb");
 static const muse::Settings::Key COLOR_RANGE_DB(moduleName, "spectrogram/colorRangeDb");
 static const muse::Settings::Key COLOR_HIGH_BOOST_DB_PER_DEC(moduleName, "spectrogram/colorHighBoostDbPerDec");
@@ -46,6 +50,18 @@ void GlobalSpectrogramConfiguration::init()
     muse::settings()->setDefaultValue(COLOR_SCHEME, muse::Val(SpectrogramColorScheme::Roseus));
     muse::settings()->valueChanged(COLOR_SCHEME).onReceive(this, [this](const muse::Val& val) {
         m_colorSchemeChanged.send(static_cast<SpectrogramColorScheme>(val.toInt()));
+        m_someSettingChanged.notify();
+    });
+
+    muse::settings()->setDefaultValue(STEREO_COMBINED, muse::Val(false));
+    muse::settings()->valueChanged(STEREO_COMBINED).onReceive(this, [this](const muse::Val& val) {
+        m_stereoCombinedChanged.send(val.toBool());
+        m_someSettingChanged.notify();
+    });
+
+    muse::settings()->setDefaultValue(STEREO_BALANCE_GAIN, muse::Val(2.5));
+    muse::settings()->valueChanged(STEREO_BALANCE_GAIN).onReceive(this, [this](const muse::Val& val) {
+        m_stereoBalanceGainChanged.send(val.toDouble());
         m_someSettingChanged.notify();
     });
 
@@ -168,6 +184,41 @@ void GlobalSpectrogramConfiguration::setColorScheme(SpectrogramColorScheme value
 muse::async::Channel<SpectrogramColorScheme> GlobalSpectrogramConfiguration::colorSchemeChanged() const
 {
     return m_colorSchemeChanged;
+}
+
+bool GlobalSpectrogramConfiguration::stereoCombined()
+{
+    return muse::settings()->value(STEREO_COMBINED).toBool();
+}
+
+void GlobalSpectrogramConfiguration::setStereoCombined(bool value)
+{
+    if (stereoCombined() != value) {
+        muse::settings()->setSharedValue(STEREO_COMBINED, muse::Val(value));
+    }
+}
+
+muse::async::Channel<bool> GlobalSpectrogramConfiguration::stereoCombinedChanged() const
+{
+    return m_stereoCombinedChanged;
+}
+
+double GlobalSpectrogramConfiguration::stereoBalanceGain()
+{
+    return muse::settings()->value(STEREO_BALANCE_GAIN).toDouble();
+}
+
+void GlobalSpectrogramConfiguration::setStereoBalanceGain(double value)
+{
+    value = std::clamp(value, 0.25, 12.0);
+    if (stereoBalanceGain() != value) {
+        muse::settings()->setSharedValue(STEREO_BALANCE_GAIN, muse::Val(value));
+    }
+}
+
+muse::async::Channel<double> GlobalSpectrogramConfiguration::stereoBalanceGainChanged() const
+{
+    return m_stereoBalanceGainChanged;
 }
 
 int GlobalSpectrogramConfiguration::colorGainDb()

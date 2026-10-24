@@ -47,6 +47,14 @@ TrackItemsContainer {
         context: root.context
     }
 
+    // This intentionally observes the resolved track/global configuration,
+    // rather than using the settings-dialog model whose Cancel lifecycle can
+    // restore a temporary snapshot.
+    TrackSpectrogramDisplayModel {
+        id: spectrogramDisplay
+        trackId: root.trackId
+    }
+
     onInitRequired: function () {
         clipsModel.init()
     }
@@ -410,6 +418,7 @@ TrackItemsContainer {
                                 isAutomationEnabled: root.isAutomationEnabled
                                 isWaveformViewVisible: root.isWaveformViewVisible
                                 isSpectrogramViewVisible: root.isSpectrogramViewVisible
+                                stereoCombined: spectrogramDisplay.stereoCombined
                                 multiSampleEdit: clipsContainer.multiSampleEdit
                                 altPressed: root.altPressed
                                 selectionInProgress: root.selectionInProgress
@@ -732,6 +741,7 @@ TrackItemsContainer {
                 selectionEndTime: root.context.selectionEndTime
                 channelHeightRatio: channelSplitter.channelHeightRatio
                 isStereo: clipsModel.isStereo
+                stereoCombined: spectrogramDisplay.stereoCombined
                 selectionController: root.selectionController
 
                 onSelectionHorizontalResize: function (x1, x2, completed) {
@@ -759,7 +769,7 @@ TrackItemsContainer {
                 channelHeightRatio: prv.isMultiView ? 0.5 : root.trackViewState.channelHeightRatio
                 color: ui.theme.extra["white_color"]
                 opacity: 0.05
-                visible: clipsModel.isStereo
+                visible: clipsModel.isStereo && !spectrogramDisplay.stereoCombined
 
                 onPositionChangeRequested: function (position) {
                     clipsContainer.updateChannelHeightRatio(position)

@@ -20,6 +20,15 @@ public:
     virtual SpectrogramColorScheme colorScheme() = 0;
     virtual void setColorScheme(SpectrogramColorScheme value) = 0;
 
+    // A unified stereo display uses brightness for mean power and hue for the
+    // left/right ratio.  It is deliberately opt-in so existing spectrograms
+    // keep their ordinary palette and per-channel layout.
+    virtual bool stereoCombined() = 0;
+    virtual void setStereoCombined(bool value) = 0;
+
+    virtual double stereoBalanceGain() = 0;
+    virtual void setStereoBalanceGain(double value) = 0;
+
     virtual int colorGainDb() = 0;
     virtual void setColorGainDb(int value) = 0;
 

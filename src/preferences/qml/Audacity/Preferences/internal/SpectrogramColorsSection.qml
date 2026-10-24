@@ -69,5 +69,46 @@ SpectrogramBaseSection {
                 settingsModel.colorScheme = index
             }
         }
+
+        CheckBox {
+            id: combinedStereoCheckBox
+            text: qsTrc("spectrogram/settings", "Combine stereo channels by balance")
+            checked: settingsModel.stereoCombined
+
+            navigation.panel: root.navigation
+            navigation.order: repeater.count + 1
+            navigation.name: "ColorsCombinedStereoCheckBox"
+
+            onClicked: settingsModel.stereoCombined = checked
+        }
+
+        IncrementalPropertyControlWithTitle {
+            width: parent.width
+            visible: combinedStereoCheckBox.checked
+
+            navigation.panel: root.navigation
+            navigation.order: repeater.count + 2
+            navigation.name: "ColorsStereoBalanceGainControl"
+
+            spacing: root.narrowSpacing
+            controlWidth: root.mediumControlWidth
+            title: qsTrc("spectrogram/settings", "Balance contrast")
+            minValue: 0.25
+            maxValue: 12
+            decimals: 2
+            step: 0.25
+            currentValue: settingsModel.stereoBalanceGain
+            onValueEditingFinished: function (value) {
+                settingsModel.stereoBalanceGain = value
+            }
+        }
+
+        StyledTextLabel {
+            width: parent.width
+            visible: combinedStereoCheckBox.checked
+            text: qsTrc("spectrogram/settings", "Brightness shows mean power. Red: left, purple: equal, blue: right.")
+            wrapMode: Text.WordWrap
+            color: ui.theme.fontSecondaryColor
+        }
     }
 }

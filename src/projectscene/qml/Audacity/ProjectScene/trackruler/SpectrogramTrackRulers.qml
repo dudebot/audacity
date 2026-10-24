@@ -13,13 +13,14 @@ Item {
     required property int trackId
     required property bool isStereo
     required property real channelHeightRatio
+    required property bool stereoCombined
 
     Column {
         anchors.fill: parent
 
         SpectrogramChannelRuler {
             width: root.width
-            height: root.isStereo ? root.height * root.channelHeightRatio : root.height
+            height: root.isStereo && !root.stereoCombined ? root.height * root.channelHeightRatio : root.height
 
             trackId: root.trackId
         }
@@ -27,14 +28,14 @@ Item {
         SeparatorLine {
             id: separatorLine
             width: root.width
-            visible: root.isStereo
+            visible: root.isStereo && !root.stereoCombined
         }
 
         SpectrogramChannelRuler {
             width: root.width
             height: root.height * (1 - root.channelHeightRatio) - separatorLine.height
 
-            visible: root.isStereo
+            visible: root.isStereo && !root.stereoCombined
             trackId: root.trackId
         }
     }

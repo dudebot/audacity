@@ -20,6 +20,12 @@ public:
     MOCK_METHOD(SpectrogramColorScheme, colorScheme, (), (override));
     MOCK_METHOD(void, setColorScheme, (SpectrogramColorScheme), (override));
 
+    MOCK_METHOD(bool, stereoCombined, (), (override));
+    MOCK_METHOD(void, setStereoCombined, (bool), (override));
+
+    MOCK_METHOD(double, stereoBalanceGain, (), (override));
+    MOCK_METHOD(void, setStereoBalanceGain, (double), (override));
+
     MOCK_METHOD(int, colorGainDb, (), (override));
     MOCK_METHOD(void, setColorGainDb, (int), (override));
 
@@ -51,6 +57,8 @@ public:
     MOCK_METHOD(muse::async::Channel<double>, minFreqChanged, (), (const, override));
     MOCK_METHOD(muse::async::Channel<double>, maxFreqChanged, (), (const, override));
     MOCK_METHOD(muse::async::Channel<SpectrogramColorScheme>, colorSchemeChanged, (), (const, override));
+    MOCK_METHOD(muse::async::Channel<bool>, stereoCombinedChanged, (), (const, override));
+    MOCK_METHOD(muse::async::Channel<double>, stereoBalanceGainChanged, (), (const, override));
     MOCK_METHOD(muse::async::Channel<int>, colorGainDbChanged, (), (const, override));
     MOCK_METHOD(muse::async::Channel<int>, colorRangeDbChanged, (), (const, override));
     MOCK_METHOD(muse::async::Channel<int>, colorHighBoostDbPerDecChanged, (), (const, override));
